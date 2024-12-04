@@ -13,14 +13,18 @@ logger.info("Starting...")
 app = flask.Flask("Server")
 
 # connecting to DB
-conn = sqlite3.connect('sensor_data.db', check_same_thread=False)
+conn = sqlite3.connect('sensor_data.db')
 c = conn.cursor()
 c.execute('''CREATE TABLE IF NOT EXISTS sensor_data (timestamp TEXT, sensor_type TEXT, data REAL)''')
+conn.close()
 
 # function to write to db
 def save_data_to_db(timestamp: str, sensor_type: str, data: float):
+    conn = sqlite3.connect('sensor_data.db')
+    c = conn.cursor()
     c.execute("INSERT INTO sensor_data (timestamp, sensor_type, data) VALUES (?, ?, ?)", (timestamp, sensor_type, data))
     conn.commit()
+    conn.close()
 
 @app.route('/sensor_data', methods=['POST'])
 def receive_data():
