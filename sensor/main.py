@@ -59,7 +59,7 @@ while True:
         }
         socket.send_json(message)
         logger.info(f"Sent: {message}")
-        time.sleep(1)
+        time.sleep(5)
     except KeyboardInterrupt:
         logger.info("Sensor stopped")
         break
