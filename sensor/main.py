@@ -1,4 +1,4 @@
-import time, datetime, random
+import time, datetime, random, zmq, logging
 
 AVG_DAY_TEMPERATURE = 0 # starting temperature for creating some kind of true data, which depends on time of the day
 
@@ -7,6 +7,21 @@ DAY_TIME = ("7:40", "15:55") # bounds of sunny part of the day
 DAY_TEMPERATURE_DELTA = (-2, 6) # min and max difference from starting temperature
 
 NOISE_BOUNDS = (-0.02, 0.02) # min and max number of sensor noise
+
+# creating Logger
+logger = logging.getLogger("Sensor")
+logger.setLevel(logging.DEBUG)
+handler = logging.StreamHandler()
+handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+
+# creating socket for ZeroMQ
+context = zmq.Context()
+socket = context.socket(zmq.PUB)
+socket.bind("tcp://*:5555")
+logger.info("Socket ctreated")
 
 # calculation of daytime and nighttime for simulation of real temperature
 day_low_bound = datetime.datetime.strptime(DAY_TIME[0], "%H:%M")
@@ -37,7 +52,14 @@ def get_temperature():
 while True:
     try:
         temperature = get_temperature()
-        print(f"Час: {datetime.datetime.now()}; Температура: {temperature}")
+        message = {
+            "timestamp": str(datetime.datetime.now()),
+            "sensor_type": "Temperature",
+            "data": temperature
+        }
+        socket.send_json(message)
+        logger.info(f"Sent: {message}")
         time.sleep(1)
     except KeyboardInterrupt:
+        logger.info("Sensor stopped")
         break

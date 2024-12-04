@@ -1,0 +1,20 @@
+services:
+  sensor:
+    build:
+      context: ./sensor
+    container_name: sensor
+    restart: unless-stopped
+
+  gateway:
+    build:
+      context: ./gateway
+    container_name: gateway
+    restart: unless-stopped
+    depends_on:
+      - sensor
+  
+  server:
+    build:
+      context: ./server
+    container_name: server
+    restart: unless-stopped
