@@ -1,4 +1,5 @@
-import time, datetime, random, zmq, logging
+import time, datetime, random, logging, json
+import paho.mqtt.client as mqtt
 
 AVG_DAY_TEMPERATURE = 0 # starting temperature for creating some kind of true data, which depends on time of the day
 
@@ -17,11 +18,11 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-# creating socket for ZeroMQ
-context = zmq.Context()
-socket = context.socket(zmq.PUB)
-socket.bind("tcp://*:5555")
-logger.info("Socket ctreated")
+broker = "broker.hivemq.com"
+port = 1883
+topic = "iot-lab/lab8"
+client = mqtt.Client()
+client.connect(broker, port, 60)
 
 # calculation of daytime and nighttime for simulation of real temperature
 day_low_bound = datetime.datetime.strptime(DAY_TIME[0], "%H:%M")
@@ -57,7 +58,7 @@ while True:
             "sensor_type": "Temperature",
             "data": temperature
         }
-        socket.send_json(message)
+        client.publish(topic, json.dumps(message))
         logger.info(f"Sent: {message}")
         time.sleep(5)
     except KeyboardInterrupt:

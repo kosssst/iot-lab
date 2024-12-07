@@ -1,6 +1,5 @@
-import zmq, logging, requests
-
-SERVER_URL = "http://server:5000/sensor_data"
+import logging, json
+import paho.mqtt.client as mqtt
 
 # creating Logger
 logger = logging.getLogger("Gateway")
@@ -12,16 +11,19 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 logger.info("Starting...")
 
-# Connecting to a socket
-context = zmq.Context()
-socket = context.socket(zmq.SUB)
-socket.connect("tcp://sensor:5555")
+broker = "broker.hivemq.com"
+port = 1883
+topic = "iot-lab/lab8"
+output_topic = "iot-lab/lab8/output"
 
-socket.setsockopt_string(zmq.SUBSCRIBE, "")
-logger.info("Connected to a sensor")
 
-while True:
-    data = socket.recv_json()
-    logger.info(f"Received data: {data}")
-    response = requests.post(SERVER_URL, json=data)
-    logger.info(f"Server responce: {response}")
+def on_message(client, userdata, message):
+    data = json.loads(message.payload)
+    logger.info(f"Received: {data}")
+    client.publish(output_topic, json.dumps(data))
+
+client = mqtt.Client()
+client.on_message = on_message
+client.connect(broker, port, 60)
+client.subscribe(topic)
+client.loop_forever()

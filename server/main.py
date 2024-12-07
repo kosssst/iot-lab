@@ -1,4 +1,5 @@
-import flask, sqlite3, logging
+import sqlite3, logging, json
+import paho.mqtt.client as mqtt
 
 # creating Logger
 logger = logging.getLogger("Server")
@@ -10,7 +11,9 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 logger.info("Starting...")
 
-app = flask.Flask("Server")
+broker = "broker.hivemq.com"
+port = 1883
+topic = "iot-lab/lab8/output"
 
 # connecting to DB
 conn = sqlite3.connect('sensor_data.db')
@@ -26,34 +29,13 @@ def save_data_to_db(timestamp: str, sensor_type: str, data: float):
     conn.commit()
     conn.close()
 
-@app.route('/sensor_data', methods=['POST'])
-def receive_data():
-    data = flask.request.json
-    logger.info(f"Received data: {data}")
+def on_message(client, userdata, message):
+    data = json.loads(message.payload)
+    logger.info(f"Received: {data}")
+    save_data_to_db(data["timestamp"], data["sensor_type"], data["data"])
 
-    if not data: # if no json payload
-        logger.error("Received empty json payload")
-        return flask.jsonify({"error": "No data provided"}), 400
-    
-    # gathering data
-    timestamp = data.get("timestamp")
-    sensor_type = data.get("sensor_type")
-    sensor_data = data.get("data")
-
-    # filtering if data not full or wrong format
-    if not timestamp or not sensor_type or not sensor_data or not isinstance(sensor_data, float) or not isinstance(timestamp, str) or not isinstance(sensor_type, str):
-        logger.error("Received invalid data format")
-        return flask.jsonify({"error": "Invalid data format"}), 400
-
-    # writing data to db
-    try:
-        save_data_to_db(timestamp, sensor_type, sensor_data)
-        logger.info("Data saved to db")
-    except:
-        return flask.jsonify({"error": "Error writing to db"}), 500
-
-
-    return flask.jsonify({"status": "success"}), 200
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+client = mqtt.Client()
+client.on_message = on_message
+client.connect(broker, port, 60)
+client.subscribe(topic)
+client.loop_forever()
