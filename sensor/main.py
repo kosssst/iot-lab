@@ -53,7 +53,7 @@ while True:
     try:
         temperature = get_temperature()
         message = {
-            "timestamp": str(datetime.datetime.now()),
+            "timestamp": time.time(),
             "sensor_type": "Temperature",
             "data": temperature
         }

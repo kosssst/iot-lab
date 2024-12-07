@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoT Data Visualization</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        .chart-container {
+            width: 80%;
+            margin: 0 auto;
+        }
+        .form-container {
+            width: 80%;
+            margin: 20px auto;
+            text-align: center;
+        }
+        input, button {
+            margin: 5px;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>IoT Sensor Data Visualization</h1>
+    <div class="form-container">
+        <label for="startTime">Start Time (YYYY-MM-DD HH:MM:SS):</label>
+        <input type="datetime-local" id="startTime">
+        <label for="endTime">End Time (YYYY-MM-DD HH:MM:SS):</label>
+        <input type="datetime-local" id="endTime">
+        <button onclick="updateCharts()">Get Data</button>
+    </div>
+    <div class="chart-container">
+        <canvas id="temperatureChart"></canvas>
+    </div>
+
+    <script>
+        function toTimestamp(dateTimeStr) {
+            const date = new Date(dateTimeStr);
+            return Math.floor(date.getTime() / 1000);
+        }
+
+        async function fetchData(startTime, endTime) {
+            try {
+                const response = await fetch(`http://127.0.0.1:5000/data?start_time=${startTime}&end_time=${endTime}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    return data;
+                } else {
+                    console.error("Failed to fetch data");
+                    return [];
+                }
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                return [];
+            }
+        }
+
+        async function updateCharts() {
+            const startTimeInput = document.getElementById('startTime').value;
+            const endTimeInput = document.getElementById('endTime').value;
+
+            if (!startTimeInput || !endTimeInput) {
+                alert("Please provide valid start and end times.");
+                return;
+            }
+
+            const startTime = toTimestamp(startTimeInput);
+            const endTime = toTimestamp(endTimeInput);
+
+            const data = await fetchData(startTime, endTime);
+
+            const timestamps = data.map(item => new Date(item.timestamp * 1000).toLocaleString());
+            const temperatures = data.map(item => item.temperature);
+
+            temperatureChart.data.labels = timestamps;
+            temperatureChart.data.datasets[0].data = temperatures;
+            temperatureChart.update();
+        }
+
+        const temperatureChart = new Chart(document.getElementById('temperatureChart'), {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Temperature (°C)',
+                    data: [],
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Timestamp'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Temperature (°C)'
+                        },
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -20,3 +20,11 @@ services:
     restart: unless-stopped
     ports:
       - "127.0.0.1:5000:5000"
+  
+  frontend:
+    build:
+      context: ./frontend
+    container_name: frontend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:80"

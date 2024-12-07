@@ -1,4 +1,5 @@
 import flask, sqlite3, logging
+from flask_cors import CORS
 
 # creating Logger
 logger = logging.getLogger("Server")
@@ -11,20 +12,34 @@ logger.addHandler(handler)
 logger.info("Starting...")
 
 app = flask.Flask("Server")
+CORS(app)
 
 # connecting to DB
 conn = sqlite3.connect('sensor_data.db')
 c = conn.cursor()
-c.execute('''CREATE TABLE IF NOT EXISTS sensor_data (timestamp TEXT, sensor_type TEXT, data REAL)''')
+c.execute('''CREATE TABLE IF NOT EXISTS sensor_data (timestamp REAL, sensor_type TEXT, data REAL)''')
 conn.close()
 
 # function to write to db
-def save_data_to_db(timestamp: str, sensor_type: str, data: float):
+def save_data_to_db(timestamp: float, sensor_type: str, data: float):
     conn = sqlite3.connect('sensor_data.db')
     c = conn.cursor()
     c.execute("INSERT INTO sensor_data (timestamp, sensor_type, data) VALUES (?, ?, ?)", (timestamp, sensor_type, data))
     conn.commit()
     conn.close()
+
+def get_data_by_time_range(start_time, end_time):
+    conn = sqlite3.connect("sensor_data.db")
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT timestamp, sensor_type, data
+        FROM sensor_data
+        WHERE timestamp BETWEEN ? AND ?
+        ORDER BY timestamp ASC
+    """, (start_time, end_time))
+    rows = cursor.fetchall()
+    conn.close()
+    return [{"timestamp": row[0], "sensor_type": row[1], "temperature": row[2]} for row in rows]
 
 @app.route('/sensor_data', methods=['POST'])
 def receive_data():
@@ -41,7 +56,7 @@ def receive_data():
     sensor_data = data.get("data")
 
     # filtering if data not full or wrong format
-    if not timestamp or not sensor_type or not sensor_data or not isinstance(sensor_data, float) or not isinstance(timestamp, str) or not isinstance(sensor_type, str):
+    if not timestamp or not sensor_type or not sensor_data or not isinstance(sensor_data, float) or not isinstance(timestamp, float) or not isinstance(sensor_type, str):
         logger.error("Received invalid data format")
         return flask.jsonify({"error": "Invalid data format"}), 400
 
@@ -54,6 +69,16 @@ def receive_data():
 
 
     return flask.jsonify({"status": "success"}), 200
+
+@app.route("/data", methods=["GET"])
+def get_data():
+    start_time = flask.request.args.get("start_time", type=float)
+    end_time = flask.request.args.get("end_time", type=float)
+    if start_time is not None and end_time is not None:
+        data = get_data_by_time_range(start_time, end_time)
+        return flask.jsonify(data)
+    else:
+        return flask.jsonify({"error": "Please provide start_time and end_time as query parameters"}), 400
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
