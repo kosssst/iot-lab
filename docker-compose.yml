@@ -153,6 +153,7 @@ services:
       - "127.0.0.1:5000:5000"
     networks:
       - cloud
+      - pg_network
   
   frontend:
     build:
@@ -169,3 +170,5 @@ services:
 networks:
   cloud:
     driver: bridge
+  pg_network:
+    external: true
