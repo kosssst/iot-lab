@@ -44,6 +44,7 @@
         <br>
         <label for="sensorType" hidden="true" id="sensorTypeLabel">Sensor type:</label>
         <select id="sensorType" hidden="true">
+            <option value="selectSensorType">Select sensor type</option>
         </select>
         <br>
         <label for="sensorID" hidden="true" id="sensorIdLabel">Sensor ID:</label>
@@ -78,6 +79,9 @@
             const sensorIDLabel = document.getElementById('sensorIdLabel');
             sensorIDSelect.innerHTML = '';
             console.log(sensors);
+            if (sensorType === 'selectSensorType') {
+                return;
+            }
             sensors[sensorType].forEach(sensorID => {
                 const sensorIDOption = document.createElement('option');
                 sensorIDOption.value = sensorID;
