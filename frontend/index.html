@@ -77,6 +77,7 @@
             const sensorIDSelect = document.getElementById('sensorID');
             const sensorIDLabel = document.getElementById('sensorIdLabel');
             sensorIDSelect.innerHTML = '';
+            console.log(sensors);
             sensors[sensorType].forEach(sensorID => {
                 const sensorIDOption = document.createElement('option');
                 sensorIDOption.value = sensorID;
