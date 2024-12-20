@@ -1,7 +1,7 @@
 import zmq, logging, requests, os
 from requests.auth import HTTPBasicAuth
 
-SERVER_URL = "http://server:5000/sensor_data"
+SERVER_URL = "http://127.0.0.1:5000/sensor_data"
 
 # creating Logger
 logger = logging.getLogger("Gateway")
