@@ -89,7 +89,7 @@
             
         async function fetchSensors() {
             try {
-                const response = await fetch('http://127.0.0.1:5000/get_sensors');
+                const response = await fetch('http://kosssst.pp.ua/iot-lab/api/get_sensors');
                 if (response.ok) {
                     const data = await response.json();
                     return data;
@@ -111,7 +111,7 @@
 
         async function fetchData(sensorType, sensorID, startTime, endTime) {
             try {
-                const response = await fetch(`http://127.0.0.1:5000/data?start_time=${startTime}&end_time=${endTime}&sensor_type=${sensorType}&sensor_id=${sensorID}`);
+                const response = await fetch(`http://kosssst.pp.ua/iot-lab/api/data?start_time=${startTime}&end_time=${endTime}&sensor_type=${sensorType}&sensor_id=${sensorID}`);
                 if (response.ok) {
                     const data = await response.json();
                     return data;
