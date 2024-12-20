@@ -26,6 +26,11 @@
             margin: 5px;
             padding: 10px;
         }
+        select {
+            margin: 5px;
+            padding: 5px;
+            width: 200px;
+        }
     </style>
 </head>
 <body>
@@ -33,23 +38,80 @@
     <div class="form-container">
         <label for="startTime">Start Time (YYYY-MM-DD HH:MM:SS):</label>
         <input type="datetime-local" id="startTime">
+        <br>
         <label for="endTime">End Time (YYYY-MM-DD HH:MM:SS):</label>
         <input type="datetime-local" id="endTime">
-        <button onclick="updateCharts()">Get Data</button>
+        <br>
+        <label for="sensorType" hidden="true" id="sensorTypeLabel">Sensor type:</label>
+        <select id="sensorType" hidden="true">
+        </select>
+        <br>
+        <label for="sensorID" hidden="true" id="sensorIdLabel">Sensor ID:</label>
+        <select id="sensorID" hidden="true">
+        </select>
+        <br>
+        <button onclick="updateCharts()" hidden="true">Get Data</button>
     </div>
     <div class="chart-container">
-        <canvas id="temperatureChart"></canvas>
+        <canvas id="chart"></canvas>
     </div>
 
     <script>
+        async function UpdateSensorTypes() {
+            const sensors = await fetchSensors();
+            const sensorTypeSelect = document.getElementById('sensorType');
+            const sensorTypeLabel = document.getElementById('sensorTypeLabel');
+            Object.keys(sensors).forEach(sensor_type => {
+                const sensorTypeOption = document.createElement('option');
+                sensorTypeOption.value = sensor_type;
+                sensorTypeOption.innerText = sensor_type;
+                sensorTypeSelect.appendChild(sensorTypeOption);
+            });
+            sensorTypeSelect.hidden = false;
+            sensorTypeLabel.hidden = false;
+        }
+
+        async function UpdateSensorIDs() {
+            const sensorType = document.getElementById('sensorType').value;
+            const sensors = await fetchSensors();
+            const sensorIDSelect = document.getElementById('sensorID');
+            const sensorIDLabel = document.getElementById('sensorIdLabel');
+            sensorIDSelect.innerHTML = '';
+            sensors[sensorType].forEach(sensorID => {
+                const sensorIDOption = document.createElement('option');
+                sensorIDOption.value = sensorID;
+                sensorIDOption.innerText = sensorID;
+                sensorIDSelect.appendChild(sensorIDOption);
+            });
+            sensorIDSelect.hidden = false;
+            sensorIDLabel.hidden = false;
+        }
+            
+        async function fetchSensors() {
+            try {
+                const response = await fetch('http://127.0.0.1:5000/get_sensors');
+                if (response.ok) {
+                    const data = await response.json();
+                    return data;
+                } else {
+                    console.error("Failed to fetch sensors");
+                    return {};
+                }
+            } catch (error) {
+                console.error("Error fetching sensors:", error);
+                return {};
+            }
+
+        }
+
         function toTimestamp(dateTimeStr) {
             const date = new Date(dateTimeStr);
             return Math.floor(date.getTime() / 1000);
         }
 
-        async function fetchData(startTime, endTime) {
+        async function fetchData(sensorType, sensorID, startTime, endTime) {
             try {
-                const response = await fetch(`http://127.0.0.1:5000/data?start_time=${startTime}&end_time=${endTime}`);
+                const response = await fetch(`http://127.0.0.1:5000/data?start_time=${startTime}&end_time=${endTime}&sensor_type=${sensorType}&sensor_id=${sensorID}`);
                 if (response.ok) {
                     const data = await response.json();
                     return data;
@@ -66,6 +128,18 @@
         async function updateCharts() {
             const startTimeInput = document.getElementById('startTime').value;
             const endTimeInput = document.getElementById('endTime').value;
+            const sensorType = document.getElementById('sensorType').value;
+            const sensorID = document.getElementById('sensorID').value;
+
+            if (!sensorID) {
+                alert("Please provide valid sensor ID.");
+                return;
+            }
+
+            if (!sensorType) {
+                alert("Please provide valid sensor type.");
+                return;
+            }
 
             if (!startTimeInput || !endTimeInput) {
                 alert("Please provide valid start and end times.");
@@ -75,22 +149,22 @@
             const startTime = toTimestamp(startTimeInput);
             const endTime = toTimestamp(endTimeInput);
 
-            const data = await fetchData(startTime, endTime);
+            const data = await fetchData(sensorType, sensorID, startTime, endTime);
 
             const timestamps = data.map(item => new Date(item.timestamp * 1000).toLocaleString());
-            const temperatures = data.map(item => item.temperature);
+            const values = data.map(item => item.value);
 
             temperatureChart.data.labels = timestamps;
-            temperatureChart.data.datasets[0].data = temperatures;
+            temperatureChart.data.datasets[0].data = values;
             temperatureChart.update();
         }
 
-        const temperatureChart = new Chart(document.getElementById('temperatureChart'), {
+        const chart = new Chart(document.getElementById('chart'), {
             type: 'line',
             data: {
                 labels: [],
                 datasets: [{
-                    label: 'Temperature (°C)',
+                    label: 'Data',
                     data: [],
                     borderColor: 'rgba(255, 99, 132, 1)',
                     backgroundColor: 'rgba(255, 99, 132, 0.2)',
@@ -109,12 +183,23 @@
                     y: {
                         title: {
                             display: true,
-                            text: 'Temperature (°C)'
+                            text: 'Data'
                         },
                         beginAtZero: true
                     }
                 }
             }
+        });
+
+        window.onload = UpdateSensorTypes;
+
+        const sensorTypeSelect = document.getElementById('sensorType');
+        const sensorIDSelect = document.getElementById('sensorID');
+
+        sensorTypeSelect.addEventListener('change', () => UpdateSensorIDs());
+        sensorIDSelect.addEventListener('change', () => {
+            const button = document.querySelector('button');
+            button.hidden = false;
         });
     </script>
 </body>

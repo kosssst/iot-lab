@@ -1,65 +1,65 @@
-import time, datetime, random, zmq, logging
+import time, random, zmq, logging, os, re
 
-AVG_DAY_TEMPERATURE = 0 # starting temperature for creating some kind of true data, which depends on time of the day
-
-DAY_TIME = ("7:40", "15:55") # bounds of sunny part of the day
-
-DAY_TEMPERATURE_DELTA = (-2, 6) # min and max difference from starting temperature
-
-NOISE_BOUNDS = (-0.02, 0.02) # min and max number of sensor noise
-
-# creating Logger
 logger = logging.getLogger("Sensor")
 logger.setLevel(logging.DEBUG)
 handler = logging.StreamHandler()
 handler.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter('%(asctime)s - [%(levelname)s] - %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-# creating socket for ZeroMQ
+logger.info("Starting...")
+
 context = zmq.Context()
-socket = context.socket(zmq.PUB)
-socket.bind("tcp://*:5555")
-logger.info("Socket ctreated")
+socket = context.socket(zmq.PUSH)
+socket.connect("tcp://gateway:5555")
 
-# calculation of daytime and nighttime for simulation of real temperature
-day_low_bound = datetime.datetime.strptime(DAY_TIME[0], "%H:%M")
-day_high_bound = datetime.datetime.strptime(DAY_TIME[1], "%H:%M")
-daytime_duration = (day_high_bound.hour * 60 + day_high_bound.minute) - (day_low_bound.hour * 60 + day_low_bound.minute)
-nighttime_duration = (24 * 60 - (day_high_bound.hour * 60 + day_high_bound.minute)) + (day_low_bound.hour * 60 + day_low_bound.minute)
+TIMEOUT = os.environ.get("SENSOR_TIMEOUT", 1)
+ID = os.environ.get("SENSOR_ID")
+TYPE = os.environ.get("SENSOR_TYPE", "electricity")
+START_POINT = os.environ.get("SENSOR_START_POINT", 0)
 
-def sensor_noise():
-    return random.uniform(NOISE_BOUNDS[0], NOISE_BOUNDS[1])
+if not ID:
+    logger.error("Sensor ID is not set")
+    exit(1)
 
-def get_temperature():
-    now = datetime.datetime.now()
+if not TYPE:
+    logger.error("Sensor type is not set")
+    exit(1)
 
-    if now.time() < day_low_bound.time():
-        current_time_from_high_bound = 24 * 60 - (day_high_bound.hour * 60 + day_high_bound.minute) + now.hour * 60 + now.minute
-        modifier = (nighttime_duration - abs(nighttime_duration / 2 - current_time_from_high_bound)) / nighttime_duration
-        return AVG_DAY_TEMPERATURE + modifier * DAY_TEMPERATURE_DELTA[0] + sensor_noise()
-    
-    if now.time() < day_high_bound.time():
-        current_time_from_low_bound = (now.hour * 60 + now.minute) - (day_low_bound.hour * 60 + day_low_bound.minute)
-        modifier = (daytime_duration - abs(daytime_duration / 2 - current_time_from_low_bound)) / daytime_duration
-        return AVG_DAY_TEMPERATURE + modifier * DAY_TEMPERATURE_DELTA[1] + sensor_noise()
-    else:
-        current_time_from_high_bound = (now.hour * 60 + now.minute) - (day_high_bound.hour * 60 + day_high_bound.minute)
-        modifier = (nighttime_duration - abs(nighttime_duration / 2 - current_time_from_high_bound)) / nighttime_duration
-        return AVG_DAY_TEMPERATURE + modifier * DAY_TEMPERATURE_DELTA[0] + sensor_noise()
+try:
+    TIMEOUT = float(TIMEOUT)
+    START_POINT = float(START_POINT)
+except ValueError:
+    logger.error("SENSOR_TIMEOUT and SENSOR_START_POINT must be float")
+    exit(1)
+
+if not re.match(r"^[a-zA-Z0-9]+$", ID):
+    logger.error("Sensor ID must contain only letters and numbers")
+    exit(1)
+
+if not re.match(r"^[a-zA-Z0-9]+$", TYPE):
+    logger.error("Sensor type must contain only letters and numbers")
+    exit(1)
+
+logger.info("Sensor started")
+
+def get_data():
+    global START_POINT
+    START_POINT += random.uniform(0, 1)
+    return START_POINT
 
 while True:
     try:
-        temperature = get_temperature()
         message = {
+            "sensor_id": ID,
+            "sensor_type": TYPE,
             "timestamp": time.time(),
-            "sensor_type": "Temperature",
-            "data": temperature
+            "data": get_data()
         }
         socket.send_json(message)
-        logger.info(f"Sent: {message}")
-        time.sleep(5)
+        logger.info(f"Data sent: {message}")
+        time.sleep(TIMEOUT)
     except KeyboardInterrupt:
         logger.info("Sensor stopped")
         break
