@@ -14,7 +14,140 @@ services:
     networks:
       - default
 
+  sensor2:
+    build:
+      context: ./sensor
+    container_name: sensor2
+    restart: unless-stopped
+    environment:
+      SENSOR_ID: 2
+      SENSOR_TYPE: electricity
+      SENSOR_START_POINT: 3457834
+      SENSOR_TIMEOUT: 0.5
+    depends_on:
+      - gateway
+    networks:
+      - default
 
+  sensor3:
+    build:
+      context: ./sensor
+    container_name: sensor3
+    restart: unless-stopped
+    environment:
+      SENSOR_ID: 3
+      SENSOR_TYPE: electricity
+      SENSOR_START_POINT: 0
+      SENSOR_TIMEOUT: 0.5
+    depends_on:
+      - gateway
+    networks:
+      - default
+
+  sensor4:
+    build:
+      context: ./sensor
+    container_name: sensor4
+    restart: unless-stopped
+    environment:
+      SENSOR_ID: 4
+      SENSOR_TYPE: electricity
+      SENSOR_START_POINT: 34973
+      SENSOR_TIMEOUT: 0.5
+    depends_on:
+      - gateway
+    networks:
+      - default
+
+  sensor5:
+    build:
+      context: ./sensor
+    container_name: sensor5
+    restart: unless-stopped
+    environment:
+      SENSOR_ID: 5
+      SENSOR_TYPE: electricity
+      SENSOR_START_POINT: 2965
+      SENSOR_TIMEOUT: 0.5
+    depends_on:
+      - gateway
+    networks:
+      - default
+
+  sensor6:
+    build:
+      context: ./sensor
+    container_name: sensor6
+    restart: unless-stopped
+    environment:
+      SENSOR_ID: 6
+      SENSOR_TYPE: electricity
+      SENSOR_START_POINT: 23986
+      SENSOR_TIMEOUT: 0.5
+    depends_on:
+      - gateway
+    networks:
+      - default
+
+  sensor7:
+    build:
+      context: ./sensor
+    container_name: sensor7
+    restart: unless-stopped
+    environment:
+      SENSOR_ID: 7
+      SENSOR_TYPE: electricity
+      SENSOR_START_POINT: 1290348
+      SENSOR_TIMEOUT: 0.5
+    depends_on:
+      - gateway
+    networks:
+      - default
+
+  sensor8:
+    build:
+      context: ./sensor
+    container_name: sensor8
+    restart: unless-stopped
+    environment:
+      SENSOR_ID: 8
+      SENSOR_TYPE: electricity
+      SENSOR_START_POINT: 1348753
+      SENSOR_TIMEOUT: 0.5
+    depends_on:
+      - gateway
+    networks:
+      - default
+
+  sensor9:
+    build:
+      context: ./sensor
+    container_name: sensor9
+    restart: unless-stopped
+    environment:
+      SENSOR_ID: 9
+      SENSOR_TYPE: electricity
+      SENSOR_START_POINT: 3519
+      SENSOR_TIMEOUT: 0.5
+    depends_on:
+      - gateway
+    networks:
+      - default
+
+  sensor10:
+    build:
+      context: ./sensor
+    container_name: sensor10
+    restart: unless-stopped
+    environment:
+      SENSOR_ID: 10
+      SENSOR_TYPE: electricity
+      SENSOR_START_POINT: 3789
+      SENSOR_TIMEOUT: 0.5
+    depends_on:
+      - gateway
+    networks:
+      - default
 
   gateway:
     build:
