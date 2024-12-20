@@ -11,6 +11,8 @@ services:
       SENSOR_TIMEOUT: 1
     depends_on:
       - gateway
+    networks:
+      - default
 
 
 
@@ -25,6 +27,7 @@ services:
       - server
     networks:
       - cloud
+      - default
   
   server:
     build:
@@ -56,3 +59,5 @@ networks:
     driver: bridge
   storage_pg_network:
     external: true
+  default:
+    driver: bridge
