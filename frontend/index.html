@@ -49,6 +49,7 @@
         <br>
         <label for="sensorID" hidden="true" id="sensorIdLabel">Sensor ID:</label>
         <select id="sensorID" hidden="true">
+            <option value="selectSensorID">Select sensor ID</option>
         </select>
         <br>
         <button onclick="updateCharts()" hidden="true">Get Data</button>
@@ -77,9 +78,13 @@
             const sensors = await fetchSensors();
             const sensorIDSelect = document.getElementById('sensorID');
             const sensorIDLabel = document.getElementById('sensorIdLabel');
+            const button = document.querySelector('button');
             sensorIDSelect.innerHTML = '';
             console.log(sensors);
             if (sensorType === 'selectSensorType') {
+                sensorIDSelect.hidden = true;
+                sensorIDLabel.hidden = true;
+                button.hidden = true;
                 return;
             }
             sensors[sensorType].forEach(sensorID => {
@@ -159,9 +164,9 @@
             const timestamps = data.map(item => new Date(item.timestamp * 1000).toLocaleString());
             const values = data.map(item => item.value);
 
-            temperatureChart.data.labels = timestamps;
-            temperatureChart.data.datasets[0].data = values;
-            temperatureChart.update();
+            chart.data.labels = timestamps;
+            chart.data.datasets[0].data = values;
+            chart.update();
         }
 
         const chart = new Chart(document.getElementById('chart'), {
@@ -203,7 +208,12 @@
 
         sensorTypeSelect.addEventListener('change', () => UpdateSensorIDs());
         sensorIDSelect.addEventListener('change', () => {
+            const sensorID = document.getElementById('sensorID').value;
             const button = document.querySelector('button');
+            if (sensorID.value === 'selectSensorID') {
+                button.hidden = true;
+                return;
+            }
             button.hidden = false;
         });
     </script>
