@@ -139,6 +139,8 @@ services:
       - gateway/.env
     depends_on:
       - server
+    networks:
+      - cloud
   
   server:
     build:
@@ -149,6 +151,8 @@ services:
       - server/.env
     ports:
       - "127.0.0.1:5000:5000"
+    networks:
+      - cloud
   
   frontend:
     build:
@@ -159,3 +163,9 @@ services:
       - "127.0.0.1:3001:80"
     depends_on:
       - server
+    networks:
+      - cloud
+
+networks:
+  cloud:
+    driver: bridge
